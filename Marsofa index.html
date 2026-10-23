@@ -1,0 +1,567 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>أرسم على المرصوفة</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Tahoma, Arial, sans-serif;
+  background: #fff8ef;
+  color: #292525;
+}
+
+.container {
+  max-width: 1100px;
+  margin: auto;
+  padding: 18px;
+}
+
+.header {
+  background: linear-gradient(120deg, #ffedcf, #ffe1e8);
+  border: 2px solid #f3c6b8;
+  border-radius: 24px;
+  padding: 22px;
+  text-align: center;
+}
+
+.header h1 {
+  font-size: clamp(25px, 5vw, 38px);
+  margin: 5px 0 12px;
+  color: #b52d66;
+}
+
+.header p {
+  font-size: 18px;
+  margin: 0;
+}
+
+.emoji {
+  font-size: 40px;
+}
+
+.choices,
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 18px 0;
+}
+
+button {
+  border: none;
+  border-radius: 13px;
+  padding: 13px 18px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  filter: brightness(0.97);
+}
+
+.choice {
+  background: white;
+  border: 2px solid #e8daca;
+}
+
+.choice.active {
+  background: #ffe0ed;
+  border-color: #e74483;
+  color: #a51f58;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.panel {
+  background: white;
+  border: 2px solid #eadfd2;
+  border-radius: 20px;
+  padding: 12px;
+  min-width: 0;
+}
+
+.panel h2 {
+  text-align: center;
+  font-size: 21px;
+  margin: 8px 0 14px;
+}
+
+.model-title {
+  color: #df4080;
+}
+
+.draw-title {
+  color: #2879cf;
+}
+
+canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+  background: white;
+  touch-action: none;
+  border: 1px solid #ddd;
+}
+
+.tip {
+  background: #eaf5ff;
+  border-radius: 15px;
+  padding: 16px;
+  margin-top: 18px;
+  font-size: 16px;
+  line-height: 2;
+}
+
+.primary {
+  background: #2879cf;
+  color: white;
+}
+
+.secondary {
+  background: #f8e4c9;
+  color: #6b451c;
+}
+
+.next {
+  background: #ffdf91;
+  color: #553815;
+}
+
+.feedback {
+  background: #fff0d7;
+  border-radius: 15px;
+  padding: 15px;
+  margin-top: 15px;
+  text-align: center;
+  font-size: 17px;
+  font-weight: bold;
+  line-height: 1.8;
+  min-height: 55px;
+}
+
+.stars {
+  text-align: center;
+  color: #e8a51b;
+  font-size: 32px;
+  letter-spacing: 5px;
+  margin: 12px;
+  min-height: 40px;
+}
+
+.small {
+  text-align: center;
+  font-size: 13px;
+  color: #74695f;
+  margin-top: 10px;
+}
+
+@media (max-width: 650px) {
+  .board {
+    grid-template-columns: 1fr;
+  }
+
+  .container {
+    padding: 10px;
+  }
+
+  button {
+    font-size: 14px;
+    padding: 12px;
+  }
+
+  .panel {
+    padding: 9px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <header class="header">
+    <div class="emoji">✏️ 📐 ⭐</div>
+    <h1>أَرْسُمُ عَلَى الْمَرْصُوفَةِ</h1>
+    <p>أُشَاهِدُ النَّمُوذَجَ، ثُمَّ أَرْسُمُ مِثْلَهُ!</p>
+    <p style="margin-top:12px">
+      🌟 هَيَّا يَا بَطَلُ، أَظْهِرْ مَهَارَتَكَ! 🌟
+    </p>
+  </header>
+
+  <div class="choices">
+    <button class="choice active" data-shape="diamond">
+      💗 الشَّكْلُ الأَوَّلُ
+    </button>
+
+    <button class="choice" data-shape="house">
+      💙 الشَّكْلُ الثَّانِي
+    </button>
+  </div>
+
+  <div class="board">
+
+    <section class="panel">
+      <h2 class="model-title">👀 أُشَاهِدُ النَّمُوذَجَ</h2>
+      <canvas id="model" width="400" height="320"></canvas>
+      <div class="small">
+        أَتَأَمَّلُ مَوَاضِعَ النِّقَاطِ وَالْخُطُوطِ.
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="draw-title">🎨 أَرْسُمُ بِنَفْسِي</h2>
+      <canvas id="drawing" width="400" height="320"></canvas>
+      <div class="small">
+        أَسْتَعْمِلُ إِصْبَعِي أَوِ الْفَأْرَةَ لِلرَّسْمِ.
+      </div>
+    </section>
+
+  </div>
+
+  <div class="tip">
+    <strong>💡 كَيْفَ أَرْسُمُ؟</strong><br>
+    ١. أُحَدِّدُ نُقْطَةَ الْبِدَايَةِ.<br>
+    ٢. أَسْحَبُ إِصْبَعِي لِرَسْمِ الْخَطِّ.<br>
+    ٣. أَرْفَعُ إِصْبَعِي، ثُمَّ أُوَاصِلُ رَسْمَ الْخُطُوطِ.<br>
+    ٤. أُكْمِلُ الشَّكْلَ وَأُقَارِنُهُ بِالنَّمُوذَجِ.
+  </div>
+
+  <div class="actions">
+    <button class="secondary" id="undo">↩️ تَرَاجُعٌ</button>
+    <button class="secondary" id="clear">🧽 أَمْسَحُ وَأُعِيدُ</button>
+    <button class="primary" id="check">⭐ أَتَحَقَّقُ مِنْ رَسْمِي</button>
+  </div>
+
+  <div class="feedback" id="feedback" aria-live="polite">
+    هَيَّا نَبْدَأُ! اِخْتَرْ شَكْلًا وَارْسُمْهُ عَلَى الشَّبَكَةِ. 😊
+  </div>
+
+  <div class="stars" id="stars">☆ ☆ ☆</div>
+
+  <div class="actions">
+    <button class="next" id="next">
+      ➡️ أَنْتَقِلُ إِلَى الشَّكْلِ التَّالِي
+    </button>
+  </div>
+
+</div>
+
+<script>
+const modelCanvas = document.getElementById("model");
+const drawCanvas = document.getElementById("drawing");
+
+const modelCtx = modelCanvas.getContext("2d");
+const drawCtx = drawCanvas.getContext("2d");
+
+const feedback = document.getElementById("feedback");
+const stars = document.getElementById("stars");
+
+const W = 400;
+const H = 320;
+const PAD = 10;
+const COLS = 10;
+const ROWS = 8;
+
+let currentShape = "diamond";
+let strokes = [];
+let activeStroke = null;
+
+/*
+  إحداثيات الأشكال على الشبكة.
+  كل نقطة تمثل تقاطعًا أو موضعًا على المرصوفة.
+*/
+
+const shapes = {
+  diamond: {
+    color: "#e74483",
+    paths: [
+      [[1, 2], [1, 6]],
+      [[1, 2], [6, 7]],
+      [[1, 6], [6, 1], [9, 4], [6, 7]]
+    ],
+    square: [7.5, 3.5]
+  },
+
+  house: {
+    color: "#2879cf",
+    paths: [
+      [[3, 3], [5, 1], [7, 3], [7, 7], [9, 9], [7, 9], [7, 5]],
+      [[3, 3], [3, 7], [1, 9], [3, 9], [3, 7]],
+      [[3, 3], [7, 3]],
+      [[5, 4], [5, 5], [6, 5], [6, 4], [5, 4]]
+    ],
+    square: null
+  }
+};
+
+function gridPoint(x, y) {
+  return [
+    PAD + x * ((W - 2 * PAD) / COLS),
+    PAD + y * ((H - 2 * PAD) / ROWS)
+  ];
+}
+
+function drawGrid(ctx) {
+  ctx.clearRect(0, 0, W, H);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.strokeStyle = "#b9b9b9";
+  ctx.lineWidth = 1;
+
+  for (let i = 0; i <= COLS; i++) {
+    const x = PAD + i * ((W - 2 * PAD) / COLS);
+
+    ctx.beginPath();
+    ctx.moveTo(x, PAD);
+    ctx.lineTo(x, H - PAD);
+    ctx.stroke();
+  }
+
+  for (let j = 0; j <= ROWS; j++) {
+    const y = PAD + j * ((H - 2 * PAD) / ROWS);
+
+    ctx.beginPath();
+    ctx.moveTo(PAD, y);
+    ctx.lineTo(W - PAD, y);
+    ctx.stroke();
+  }
+}
+
+function drawPath(ctx, points, color, width = 4) {
+  if (!points || points.length === 0) return;
+
+  ctx.beginPath();
+  ctx.moveTo(...gridPoint(points[0][0], points[0][1]));
+
+  for (let i = 1; i < points.length; i++) {
+    ctx.lineTo(...gridPoint(points[i][0], points[i][1]));
+  }
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.stroke();
+}
+
+function drawSquare(ctx, square, color) {
+  if (!square) return;
+
+  const [x, y] = gridPoint(square[0], square[1]);
+  const size = 25;
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 4;
+  ctx.strokeRect(x - size / 2, y - size / 2, size, size);
+}
+
+function renderModel() {
+  drawGrid(modelCtx);
+
+  const shape = shapes[currentShape];
+
+  shape.paths.forEach(path => {
+    drawPath(modelCtx, path, shape.color, 4);
+  });
+
+  drawSquare(modelCtx, shape.square, shape.color);
+}
+
+function renderDrawing() {
+  drawGrid(drawCtx);
+
+  strokes.forEach(stroke => {
+    drawPath(drawCtx, stroke.points, "#2879cf", 4);
+  });
+
+  if (activeStroke) {
+    drawPath(drawCtx, activeStroke.points, "#2879cf", 4);
+  }
+}
+
+/* تحويل مكان اللمس أو الفأرة إلى إحداثيات الشبكة */
+
+function getPosition(event) {
+  const rect = drawCanvas.getBoundingClientRect();
+
+  const x = (event.clientX - rect.left) * W / rect.width;
+  const y = (event.clientY - rect.top) * H / rect.height;
+
+  const gx = Math.max(
+    0, Math.min(COLS, (x - PAD) / ((W - 2 * PAD) / COLS))
+  );
+
+  const gy = Math.max(
+    0, Math.min(ROWS, (y - PAD) / ((H - 2 * PAD) / ROWS))
+  );
+
+  return [gx, gy];
+}
+
+/* بدء رسم خط */
+
+drawCanvas.addEventListener("pointerdown", event => {
+  event.preventDefault();
+
+  drawCanvas.setPointerCapture(event.pointerId);
+
+  const [x, y] = getPosition(event);
+
+  activeStroke = {
+    points: [[x, y]]
+  };
+
+  renderDrawing();
+});
+
+/* مواصلة الرسم */
+
+drawCanvas.addEventListener("pointermove", event => {
+  if (!activeStroke) return;
+
+  event.preventDefault();
+
+  const [x, y] = getPosition(event);
+
+  activeStroke.points.push([x, y]);
+
+  renderDrawing();
+});
+
+/* إنهاء الخط */
+
+function finishStroke() {
+  if (!activeStroke) return;
+
+  if (activeStroke.points.length > 1) {
+    strokes.push(activeStroke);
+  }
+
+  activeStroke = null;
+  renderDrawing();
+}
+
+drawCanvas.addEventListener("pointerup", finishStroke);
+drawCanvas.addEventListener("pointercancel", finishStroke);
+
+/* اختيار شكل */
+
+document.querySelectorAll("[data-shape]").forEach(button => {
+  button.addEventListener("click", () => {
+    currentShape = button.dataset.shape;
+
+    document.querySelectorAll("[data-shape]").forEach(item => {
+      item.classList.toggle("active", item === button);
+    });
+
+    strokes = [];
+    activeStroke = null;
+
+    renderModel();
+    renderDrawing();
+
+    stars.textContent = "☆ ☆ ☆";
+    feedback.textContent =
+      "أَحْسَنْتَ! شَاهِدِ النَّمُوذَجَ وَابْدَأِ الرَّسْمَ مِنْ جَدِيدٍ. 😊";
+  });
+});
+
+/* مسح الرسم */
+
+document.getElementById("clear").addEventListener("click", () => {
+  strokes = [];
+  activeStroke = null;
+
+  renderDrawing();
+
+  stars.textContent = "☆ ☆ ☆";
+  feedback.textContent =
+    "الشَّبَكَةُ جَاهِزَةٌ! حَاوِلْ مَرَّةً أُخْرَى. 💪";
+});
+
+/* التراجع عن آخر خط */
+
+document.getElementById("undo").addEventListener("click", () => {
+  if (activeStroke) {
+    activeStroke = null;
+  } else {
+    strokes.pop();
+  }
+
+  renderDrawing();
+
+  feedback.textContent =
+    "يُمْكِنُكَ مُوَاصَلَةُ الرَّسْمِ. 😊";
+});
+
+/* التحقق التحفيزي */
+
+document.getElementById("check").addEventListener("click", () => {
+  const totalPoints = strokes.reduce(
+    (total, stroke) => total + stroke.points.length,
+    0
+  );
+
+  if (strokes.length < 2 || totalPoints < 8) {
+    feedback.textContent =
+      "حَاوِلْ أَنْ تَرْسُمَ مَزِيدًا مِنَ الْخُطُوطِ لِيَكْتَمِلَ الشَّكْلُ. 💪";
+
+    return;
+  }
+
+  let score = Math.min(
+    3,
+    Math.max(1, Math.floor(strokes.length / 2))
+  );
+
+  stars.textContent = ["", "⭐ ☆ ☆", "⭐ ⭐ ☆", "⭐ ⭐ ⭐"][score];
+
+  if (score === 3) {
+    feedback.textContent =
+      "رَائِعٌ جِدًّا! أَكْمَلْتَ خُطُوطًا عَدِيدَةً. أَنْتَ فَنَّانٌ! 🎉";
+  } else {
+    feedback.textContent =
+      "أَحْسَنْتَ عَلَى الْمُحَاوَلَةِ! قَارِنْ رَسْمَكَ بِالنَّمُوذَجِ وَحَاوِلْ تَحْسِينَهُ. 🌟";
+  }
+});
+
+/* الانتقال إلى الشكل التالي */
+
+document.getElementById("next").addEventListener("click", () => {
+  const nextShape =
+    currentShape === "diamond" ? "house" : "diamond";
+
+  document.querySelector(
+    '[data-shape="' + nextShape + '"]'
+  ).click();
+});
+
+/* عرض الشبكة والنموذج عند فتح الصفحة */
+
+renderModel();
+renderDrawing();
+</script>
+
+</body>
+</html>
